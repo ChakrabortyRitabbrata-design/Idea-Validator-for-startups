@@ -10,11 +10,10 @@ from app.db import models
 from app.models.idea import StartupIdea
 from app.services.rag_service import evaluate_startup_idea
 
-# 1. Load Environment Variables (API Keys, DB URLs)
+# 1. Load Environment Variables
 load_dotenv()
 
-# 2. Create Database Tables (The "Idea Vault")
-# This tells SQLAlchemy to build the tables if they don't exist yet
+# 2. Create Database Tables
 models.Base.metadata.create_all(bind=engine)
 
 # 3. Initialize FastAPI
@@ -24,10 +23,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS so the standalone index.html can fetch data
+# --- THE BIG FIX: SPECIFIC CORS SETTINGS ---
+# Replace the Vercel link below with your ACTUAL production URL
+origins = [
+    "http://localhost:3000", # Local development
+    "https://idea-validator-for-startups.vercel.app", #   Vercel URL 
+    "https://idea-validator-for-startups-1.onrender.com", #  Render URL
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins, # No more "*" which causes issues with credentials/history
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,19 +43,18 @@ app.add_middleware(
 async def health_check():
     """Checks if the server is alive."""
     return {"status": "online", "engine": "Gemini 3 Flash"}
+
 @app.post("/analyze-idea")
 async def analyze_idea(idea: StartupIdea, db: Session = Depends(get_db)):
     try:
         # 1. Trigger the Modular Pipeline (Gemini)
-        # We now expect a structured report based on the roadmap's modules
         raw_report = evaluate_startup_idea(idea.title, idea.description)
         
-        # 2. Extract specific modules for storage [cite: 82]
-        # In a real app, you might save these into separate DB columns
+        # 2. Extract specific modules for storage
         db_evaluation = models.IdeaEvaluation(
             title=idea.title,
             description=idea.description,
-            report=str(raw_report) # Store the full structured analysis
+            report=str(raw_report) 
         )
         
         db.add(db_evaluation)
@@ -58,10 +63,11 @@ async def analyze_idea(idea: StartupIdea, db: Session = Depends(get_db)):
         
         return {
             "id": db_evaluation.id, 
-            "analysis": raw_report  # Send the full structured object to the frontend
+            "analysis": raw_report 
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/evaluations")
 async def get_all_evaluations(db: Session = Depends(get_db)):
     """Retrieves all past evaluations from the database."""
