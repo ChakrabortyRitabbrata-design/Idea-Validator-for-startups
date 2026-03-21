@@ -8,7 +8,7 @@ import os
 from app.db.database import engine, get_db
 from app.db import models
 from app.models.idea import StartupIdea
-from app.services.rag_service import evaluate_startup_idea
+from app.services.rag_service import get_ruthless_evaluation
 
 # 1. Load Environment Variables
 load_dotenv()
@@ -48,7 +48,7 @@ async def health_check():
 async def analyze_idea(idea: StartupIdea, db: Session = Depends(get_db)):
     try:
         # 1. Trigger the Modular Pipeline (Gemini)
-        raw_report = evaluate_startup_idea(idea.title, idea.description)
+        raw_report = get_ruthless_evaluation(idea.title, idea.description)
         
         # 2. Extract specific modules for storage
         db_evaluation = models.IdeaEvaluation(
