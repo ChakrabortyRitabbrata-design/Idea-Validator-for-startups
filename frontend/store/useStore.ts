@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export interface StructuredAnalysis {
-  assumptions?: string[];
+  consultant_opinion?: string[];
   risks?: Record<string, string[]>;
   validation_plan?: string[];
   verdict?: string;

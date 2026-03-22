@@ -17,8 +17,10 @@ import {
   Target,
   ShieldAlert,
   ListChecks,
-  RefreshCw
+  RefreshCw,
+  Lightbulb
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function IdeaValidatorPage() {
   const { 
@@ -161,33 +163,38 @@ export default function IdeaValidatorPage() {
           {/* Report Card */}
           {!isLoading && currentReport && (
             typeof currentReport === 'object' && currentReport !== null ? (
-              <div className="mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <motion.div 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="mt-8 space-y-6"
+              >
                 
                 {/* Verdict Badge */}
                 {currentReport.verdict && (
                   <div className={`p-4 rounded-xl flex items-center gap-3 border ${
-                    currentReport.verdict.toUpperCase().includes('GO') && !currentReport.verdict.toUpperCase().includes('NO-GO') ? 'bg-green-500/10 border-green-500/30 text-green-400' : 
-                    currentReport.verdict.toUpperCase().includes('NO-GO') ? 'bg-red-500/10 border-red-500/30 text-red-400' :
-                    'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                    currentReport.verdict.toUpperCase().includes('GO') && !currentReport.verdict.toUpperCase().includes('NO-GO') ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 
+                    currentReport.verdict.toUpperCase().includes('NO-GO') ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.4)]' :
+                    'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
                   }`}>
                     {currentReport.verdict.toUpperCase().includes('GO') && !currentReport.verdict.toUpperCase().includes('NO-GO') ? <CheckCircle /> : currentReport.verdict.toUpperCase().includes('NO-GO') ? <XCircle /> : <AlertTriangle />}
                     <span className="font-bold text-lg tracking-wider">VERDICT: {currentReport.verdict.toUpperCase()}</span>
                   </div>
                 )}
             
-                {/* Assumptions */}
-                {currentReport.assumptions && (
-                  <div className="p-6 rounded-xl bg-[#111]/80 backdrop-blur-md border border-[#222] shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-[#EAEAEA] mb-4">
-                      <Target size={18} className="text-[#888]" /> Core Assumptions
+                {/* Consultant Opinion */}
+                {currentReport.consultant_opinion && (
+                  <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-blue-400 mb-4">
+                      <Lightbulb size={18} className="text-blue-400" /> Strategic Consultant Opinion
                     </h3>
-                    <ul className="space-y-2">
-                      {(Array.isArray(currentReport.assumptions) ? currentReport.assumptions : [currentReport.assumptions]).map((ass: any, i: number) => (
-                        <li key={i} className="flex gap-3 text-[#A3A3A3] text-[15px]">
-                          <span className="text-[#555] mt-1">•</span> <span className="pt-0.5">{String(ass)}</span>
+                    <ol className="list-decimal pl-5 space-y-3">
+                      {(Array.isArray(currentReport.consultant_opinion) ? currentReport.consultant_opinion : [currentReport.consultant_opinion]).map((op: any, i: number) => (
+                        <li key={i} className="text-slate-300 text-[15px] italic font-serif leading-relaxed">
+                          {String(op)}
                         </li>
                       ))}
-                    </ul>
+                    </ol>
                   </div>
                 )}
             
@@ -195,7 +202,7 @@ export default function IdeaValidatorPage() {
                 {currentReport.risks && typeof currentReport.risks === 'object' && Object.keys(currentReport.risks).length > 0 && (
                   <div>
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-[#EAEAEA] mb-4 mt-8">
-                      <ShieldAlert size={18} className="text-[#888]" /> Risk Profile
+                      <AlertTriangle size={18} className="text-[#888]" /> Risk Profile
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                        {Array.isArray(currentReport.risks) ? (
@@ -229,7 +236,7 @@ export default function IdeaValidatorPage() {
                 {currentReport.validation_plan && (
                   <div className="p-6 rounded-xl bg-gradient-to-br from-[#111] to-[#151515] border border-[#222] mt-8 shadow-[0_0_20px_rgba(0,0,0,0.5)] shadow-black/50">
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-[#EAEAEA] mb-4">
-                      <ListChecks size={18} className="text-[#888]" /> Validation Plan
+                      <Target size={18} className="text-[#888]" /> Validation Plan
                     </h3>
                     <ol className="space-y-4">
                       {(Array.isArray(currentReport.validation_plan) ? currentReport.validation_plan : [currentReport.validation_plan]).map((step: any, i: number) => (
@@ -253,7 +260,7 @@ export default function IdeaValidatorPage() {
                   <RefreshCw size={16} className="text-[#888] group-hover:rotate-180 transition-transform duration-500" />
                   Refine Idea & Resubmit
                 </button>
-              </div>
+              </motion.div>
             ) : (
               <div className="mt-8 rounded-xl border border-[#333] bg-[#111] p-8 md:p-10 shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 duration-500 relative group">
                 {/* Subtle top border glow equivalent to Linear */}
