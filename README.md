@@ -1,37 +1,35 @@
-# 🚀 ValidatorOS: Startup Idea Evaluator Pro
-**The Ruthless AI Co-founder for 2026**
+# 🚀 Ruthless AI Startup Validator
 
-ValidatorOS is a full-stack AI application that uses **RAG (Retrieval-Augmented Generation)** to provide brutal, honest, and data-driven feedback on startup viability. It doesn't just chat; it analyzes market fit, risks, and execution strategies using a curated knowledge base.
+An **Agentic RAG (Retrieval-Augmented Generation)** platform designed to provide brutal, data-driven feedback on startup ideas. Unlike standard LLMs, this engine performs **live market research** using the Tavily Search API to identify real competitors, current market trends (CAGR), and execution risks specific to 2026.
 
-🔗 **Live Demo:** https://idea-validator-for-startups.vercel.app/
-
----
-
-## 🧠 Key Features
-* **Ruthless Analysis:** Powered by **gemini-3-flash-preview** for high-speed, logical evaluation.
-* **RAG Integration:** Consults a `data/` folder of PDFs/Market reports for grounded advice.
-* **Evaluation History:** Persistent storage of past ideas using **Neon PostgreSQL**.
-* **Linear-Inspired UI:** A clean, dark-mode professional interface built with **Next.js 15**.
-* **Full-Stack Deployment:** Seamless communication between Vercel (Frontend) and Render (Backend).
+![Next.js](https://img.shields.io/badge/frontend-Next.js%2014-black)
+![FastAPI](https://img.shields.io/badge/backend-FastAPI-009688)
+![Gemini](https://img.shields.io/badge/AI-Gemini%201.5%20Flash-blue)
+![Tavily](https://img.shields.io/badge/Search-Tavily%20AI-orange)
 
 ---
+
+## 🧠 The "Agentic" Difference
+Standard AI models are frozen in time. This validator acts as an **AI Agent**:
+1. **Research Phase**: Upon receiving an idea, it queries the **Tavily Search API** for real-time market data.
+2. **Context Injection**: It cleans and feeds that live data into **Gemini 1.5 Flash**.
+3. **Ruthless Persona**: The AI assumes the role of a cynical VC/Co-founder to find "fatal flaws" in the business model.
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework:** Next.js 15 (App Router)
-- **Styling:** Tailwind CSS (Modern Dark Theme)
-- **Icons:** Lucide React
-- **State Management:** Zustand
-- **Deployment:** Vercel
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS + Framer Motion (for smooth UI transitions)
+- **State Management**: Zustand
+- **Deployment**: Vercel
 
 ### Backend
-- **Framework:** FastAPI (Python 3.11)
-- **AI Model:** gemini-3-flash-preview
-- **Database ORM:** SQLAlchemy
-- **Deployment:** Render
+- **Framework**: FastAPI (Python)
+- **Database**: Neon (Serverless PostgreSQL)
+- **ORM**: SQLAlchemy
+- **Search Engine**: Tavily AI (Agentic Search)
+- **LLM**: Google Gemini 1.5 Flash
+- **Deployment**: Render
 
-### Database & Storage
-- **Primary DB:** Neon Tech (Serverless PostgreSQL)
-- **Knowledge Base:** Local PDF/Text ingestion via RAG pipeline
+---
 
