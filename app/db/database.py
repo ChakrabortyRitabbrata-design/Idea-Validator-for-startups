@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
@@ -18,7 +18,11 @@ if not DATABASE_URL:
     )
 
 # 4. Create the 'Engine' (The connection machine)
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    poolclass=pool.NullPool,
+    connect_args={"sslmode": "require"}
+)
 
 # 5. Create a 'SessionLocal' (The factory that makes database connections for each request)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

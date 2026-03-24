@@ -25,11 +25,7 @@ app = FastAPI(
 )
 
 # 4. Production CORS Configuration
-origins = [
-    "http://localhost:3000",
-    "https://idea-validator-for-startups.vercel.app", 
-    "https://idea-validator-for-startups-1.onrender.com"# Replace with your actual Vercel URL
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -84,7 +80,7 @@ async def get_history(db: Session = Depends(get_db)):
     try:
         evaluations = db.query(models.IdeaEvaluation).order_by(models.IdeaEvaluation.id.desc()).all()
         # Ensure we return an empty list [] instead of null/None
-        return evaluations if evaluations is not deal else []
+        return evaluations if evaluations else []
     except Exception as e:
         print(f"Database Error: {e}")
         return [] # Return empty list on error to keep UI stable

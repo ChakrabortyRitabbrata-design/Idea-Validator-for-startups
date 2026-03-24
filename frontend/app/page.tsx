@@ -189,7 +189,7 @@ export default function IdeaValidatorPage() {
                   <button
                     key={ev.id || i}
                     onClick={() => {
-                      setCurrentReport(ev.report);
+                      setCurrentReport(ev.report, ev.id);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="w-full text-left group p-4 rounded-lg bg-[#151515] border border-[#222] hover:border-[#444] hover:bg-[#1A1A1A] transition-all flex flex-col gap-1.5 focus:outline-none focus:ring-1 focus:ring-[#555]"
