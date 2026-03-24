@@ -21,6 +21,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ReportDisplay from '../components/ReportDisplay';
 
 export default function IdeaValidatorPage() {
   const { 
@@ -162,122 +163,7 @@ export default function IdeaValidatorPage() {
 
           {/* Report Card */}
           {!isLoading && currentReport && (
-            typeof currentReport === 'object' && currentReport !== null ? (
-              <motion.div 
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="mt-8 space-y-6"
-              >
-                
-                {/* Verdict Badge */}
-                {currentReport.verdict && (
-                  <div className={`p-4 rounded-xl flex items-center gap-3 border ${
-                    currentReport.verdict.toUpperCase().includes('GO') && !currentReport.verdict.toUpperCase().includes('NO-GO') ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 
-                    currentReport.verdict.toUpperCase().includes('NO-GO') ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.4)]' :
-                    'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
-                  }`}>
-                    {currentReport.verdict.toUpperCase().includes('GO') && !currentReport.verdict.toUpperCase().includes('NO-GO') ? <CheckCircle /> : currentReport.verdict.toUpperCase().includes('NO-GO') ? <XCircle /> : <AlertTriangle />}
-                    <span className="font-bold text-lg tracking-wider">VERDICT: {currentReport.verdict.toUpperCase()}</span>
-                  </div>
-                )}
-            
-                {/* Consultant Opinion */}
-                {currentReport.consultant_opinion && (
-                  <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-blue-400 mb-4">
-                      <Lightbulb size={18} className="text-blue-400" /> Strategic Consultant Opinion
-                    </h3>
-                    <ol className="list-decimal pl-5 space-y-3">
-                      {(Array.isArray(currentReport.consultant_opinion) ? currentReport.consultant_opinion : [currentReport.consultant_opinion]).map((op: any, i: number) => (
-                        <li key={i} className="text-slate-300 text-[15px] italic font-serif leading-relaxed">
-                          {String(op)}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-            
-                {/* Risks Grid */}
-                {currentReport.risks && typeof currentReport.risks === 'object' && Object.keys(currentReport.risks).length > 0 && (
-                  <div>
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-[#EAEAEA] mb-4 mt-8">
-                      <AlertTriangle size={18} className="text-[#888]" /> Risk Profile
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       {Array.isArray(currentReport.risks) ? (
-                         <div className="p-5 rounded-lg bg-[#161616] border border-[#2A2A2A] shadow-inner md:col-span-3">
-                           <ul className="space-y-2">
-                              {currentReport.risks.map((r: string, i: number) => (
-                                <li key={i} className="text-[13.5px] text-[#A3A3A3] flex gap-2 leading-snug"><span className="text-red-500/50 mt-0.5">•</span> <span>{String(r)}</span></li>
-                              ))}
-                           </ul>
-                         </div>
-                       ) : (
-                         Object.entries(currentReport.risks).map(([category, risksList]) => {
-                            const items = Array.isArray(risksList) ? risksList : typeof risksList === 'object' && risksList !== null ? Object.values(risksList) : [risksList];
-                            return (
-                              <div key={category} className="p-5 rounded-lg bg-[#161616] border border-[#2A2A2A] shadow-inner">
-                                 <h4 className="text-sm font-semibold tracking-wider uppercase text-[#888] mb-3">{category} Risks</h4>
-                                 <ul className="space-y-2">
-                                    {items.map((r, i) => (
-                                      <li key={i} className="text-[13.5px] text-[#A3A3A3] flex gap-2 leading-snug"><span className="text-red-500/50 mt-0.5">•</span> <span>{String(r)}</span></li>
-                                    ))}
-                                 </ul>
-                              </div>
-                            );
-                         })
-                       )}
-                    </div>
-                  </div>
-                )}
-            
-                {/* Validation Plan */}
-                {currentReport.validation_plan && (
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-[#111] to-[#151515] border border-[#222] mt-8 shadow-[0_0_20px_rgba(0,0,0,0.5)] shadow-black/50">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-[#EAEAEA] mb-4">
-                      <Target size={18} className="text-[#888]" /> Validation Plan
-                    </h3>
-                    <ol className="space-y-4">
-                      {(Array.isArray(currentReport.validation_plan) ? currentReport.validation_plan : [currentReport.validation_plan]).map((step: any, i: number) => (
-                        <li key={i} className="flex gap-4 text-[#A3A3A3] text-[15px]">
-                          <span className="flex items-center justify-center shrink-0 w-6 h-6 rounded bg-[#222] text-[#888] text-xs font-mono">{i+1}</span>
-                          <span className="pt-0.5 leading-relaxed">{String(step)}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-                
-                {/* Refine Button */}
-                <button 
-                  onClick={() => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    // Optional: You could focus the description box here if desired
-                  }}
-                  className="mt-6 w-full py-4 rounded-xl border border-[#333] hover:border-[#555] hover:bg-[#1A1A1A] transition-all text-[#EDEDED] font-medium flex justify-center items-center gap-2 group"
-                >
-                  <RefreshCw size={16} className="text-[#888] group-hover:rotate-180 transition-transform duration-500" />
-                  Refine Idea & Resubmit
-                </button>
-              </motion.div>
-            ) : (
-              <div className="mt-8 rounded-xl border border-[#333] bg-[#111] p-8 md:p-10 shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 duration-500 relative group">
-                {/* Subtle top border glow equivalent to Linear */}
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#555] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                
-                <div className="flex items-center gap-3 mb-8 border-b border-[#222] pb-6">
-                  <Sparkles size={20} className="text-[#A3A3A3]" />
-                  <h2 className="text-xl font-semibold tracking-tight text-[#EAEAEA]">Evaluation Result</h2>
-                </div>
-                
-                {/* Legacy Markdown Content rendered here */}
-                <div 
-                  className="prose prose-invert prose-p:text-[#A3A3A3] prose-headings:text-[#EDEDED] prose-a:text-[#888] prose-strong:text-[#EAEAEA] prose-ul:text-[#A3A3A3] prose-li:marker:text-[#555] max-w-none text-[15.5px] leading-relaxed"
-                  dangerouslySetInnerHTML={createMarkup(currentReport as string)}
-                />
-              </div>
-            )
+            <ReportDisplay currentReport={currentReport} />
           )}
         </div>
 
