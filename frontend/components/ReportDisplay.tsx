@@ -1,4 +1,5 @@
 import React from 'react';
+import { useStore } from '../store/useStore';
 import { motion, Variants } from 'framer-motion';
 import { marked } from 'marked';
 import { 
@@ -8,7 +9,7 @@ import {
   Target,
   Lightbulb,
   Sparkles,
-  RefreshCw
+  RotateCcw
 } from 'lucide-react';
 
 interface ReportDisplayProps {
@@ -16,6 +17,8 @@ interface ReportDisplayProps {
 }
 
 export default function ReportDisplay({ currentReport }: ReportDisplayProps) {
+  const { resetSession } = useStore();
+  
   // Framer Motion variants for stagger effect
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -197,13 +200,14 @@ export default function ReportDisplay({ currentReport }: ReportDisplayProps) {
       {/* Refine Button */}
       <motion.div variants={itemVariants}>
         <button 
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+          onClick={async () => {
+            await resetSession();
+            window.location.reload();
           }}
-          className="mt-4 w-full py-4 rounded-xl font-semibold bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/80 transition-all text-zinc-200 flex justify-center items-center gap-2 group shadow-lg"
+          className="mt-4 w-full py-4 rounded-xl font-semibold bg-transparent border border-zinc-700 hover:bg-red-500 hover:border-red-500 text-zinc-300 hover:text-white transition-all duration-300 flex justify-center items-center gap-2 group hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
         >
-          <RefreshCw size={18} className="text-zinc-500 group-hover:text-cyan-400 group-hover:rotate-180 transition-all duration-500" />
-          Refine Strategy & Resubmit
+          <RotateCcw size={18} className="text-zinc-500 group-hover:text-white transition-transform duration-500 group-hover:-rotate-180" />
+          <span className="group-hover:[text-shadow:0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300">Refine & Resubmit</span>
         </button>
       </motion.div>
     </motion.div>
