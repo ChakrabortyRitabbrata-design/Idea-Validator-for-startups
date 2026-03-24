@@ -30,6 +30,20 @@ interface AppState {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
+const parsePythonString = (str: string) => {
+  try {
+    const jsonFriendly = str
+      .replace(/(?<![a-zA-Z])'|'(?![a-zA-Z])/g, '"') // Replace single quotes (ignoring apostrophes)
+      .replace(/\bNone\b/g, 'null')                 // Replace Python None
+      .replace(/\bTrue\b/g, 'true')                 // Replace Python True
+      .replace(/\bFalse\b/g, 'false');              // Replace Python False
+    return JSON.parse(jsonFriendly);
+  } catch (e) {
+    console.warn("Failed to parse report for text snippet.");
+    return { consultant_opinion: ["Error parsing historical data"] };
+  }
+};
+
 export const useStore = create<AppState>((set, get) => ({
         history: [],
         currentReport: null,
@@ -52,19 +66,7 @@ export const useStore = create<AppState>((set, get) => ({
       let parsedReport = item.report;
       
       if (typeof item.report === 'string') {
-        try {
-          // Replace Python-specific syntax with JSON-compatible syntax
-          const jsonFriendly = item.report
-            .replace(/'/g, '"')         // Replace single quotes with double quotes
-            .replace(/None/g, 'null')   // Replace Python None
-            .replace(/True/g, 'true')   // Replace Python True
-            .replace(/False/g, 'false'); // Replace Python False
-          
-          parsedReport = JSON.parse(jsonFriendly);
-        } catch (e) {
-          console.warn("Failed to parse report for ID:", item.id);
-          parsedReport = { consultant_opinion: ["Error parsing historical data"] };
-        }
+        parsedReport = parsePythonString(item.report);
       }
       
       return { ...item, report: parsedReport };
@@ -125,6 +127,10 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   setCurrentReport: (report: StructuredAnalysis | string, id?: number) => {
-    set({ currentReport: report, currentId: id || null });
+    let parsed = report;
+    if (typeof report === 'string') {
+      parsed = parsePythonString(report);
+    }
+    set({ currentReport: parsed as StructuredAnalysis, currentId: id || null });
   }
 }));
