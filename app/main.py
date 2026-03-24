@@ -81,4 +81,10 @@ async def analyze_idea(idea: StartupIdea, db: Session = Depends(get_db)):
 @app.get("/evaluations")
 async def get_history(db: Session = Depends(get_db)):
     """Fetch all past startup protocols."""
-    evaluations = db
+    try:
+        evaluations = db.query(models.IdeaEvaluation).order_by(models.IdeaEvaluation.id.desc()).all()
+        # Ensure we return an empty list [] instead of null/None
+        return evaluations if evaluations is not deal else []
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return [] # Return empty list on error to keep UI stable

@@ -38,17 +38,20 @@ export const useStore = create<AppState>((set, get) => ({
   error: null,
 
   fetchHistory: async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/evaluations`);
-      if (!res.ok) throw new Error('Failed to fetch history');
-      const data = await res.json();
-      set({ history: Array.isArray(data) ? data : data.data || [] });
-    } catch (err) {
-      console.error(err);
-      set({ error: 'Could not load history. Is the backend running?' });
-    }
-  },
-
+  try {
+    const res = await fetch(`${API_BASE_URL}/evaluations`);
+    if (!res.ok) throw new Error('Failed to fetch history');
+    const data = await res.json();
+    
+    // This is the safety net:
+    const historyData = Array.isArray(data) ? data : [];
+    set({ history: historyData, error: null }); 
+  } catch (err) {
+    console.error(err);
+    // Only set error if it's a real connection failure, not just an empty list
+    set({ error: 'Database is empty or unreachable' });
+  }
+},
   analyzeIdea: async (title: string, description: string) => {
     set({ isLoading: true, error: null, currentReport: null, currentId: null });
     
