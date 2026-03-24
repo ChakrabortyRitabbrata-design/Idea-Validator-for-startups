@@ -27,7 +27,7 @@ app = FastAPI(
 # 4. Production CORS Configuration
 origins = [
     "http://localhost:3000",
-    "https://idea-validator-for-startups.vercel.app/", 
+    "https://idea-validator-for-startups.vercel.app", 
     "https://idea-validator-for-startups-1.onrender.com"# Replace with your actual Vercel URL
 ]
 
