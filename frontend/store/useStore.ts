@@ -37,19 +37,20 @@ export const useStore = create<AppState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchHistory: async () => {
+ fetchHistory: async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/evaluations`);
-    if (!res.ok) throw new Error('Failed to fetch history');
     const data = await res.json();
     
-    // This is the safety net:
-    const historyData = Array.isArray(data) ? data : [];
-    set({ history: historyData, error: null }); 
+    const formattedData = data.map((item: any) => ({
+      ...item,
+      // If report is a string (common with SQLAlchemy), parse it to an object
+      report: typeof item.report === 'string' ? JSON.parse(item.report.replace(/'/g, '"')) : item.report
+    }));
+
+    set({ history: formattedData });
   } catch (err) {
-    console.error(err);
-    // Only set error if it's a real connection failure, not just an empty list
-    set({ error: 'Database is empty or unreachable' });
+    set({ history: [] });
   }
 },
   analyzeIdea: async (title: string, description: string) => {
