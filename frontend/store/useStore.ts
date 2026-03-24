@@ -40,17 +40,40 @@ export const useStore = create<AppState>((set, get) => ({
  fetchHistory: async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/evaluations`);
+    if (!res.ok) throw new Error('Failed to fetch history');
+    
     const data = await res.json();
     
-    const formattedData = data.map((item: any) => ({
-      ...item,
-      // If report is a string (common with SQLAlchemy), parse it to an object
-      report: typeof item.report === 'string' ? JSON.parse(item.report.replace(/'/g, '"')) : item.report
-    }));
+    // 1. Ensure we have an array
+    const rawHistory = Array.isArray(data) ? data : (data.data || []);
 
-    set({ history: formattedData });
+    // 2. The "Hydration" Logic: Convert Python Strings to JS Objects
+    const formattedHistory = rawHistory.map((item: any) => {
+      let parsedReport = item.report;
+      
+      if (typeof item.report === 'string') {
+        try {
+          // Replace Python-specific syntax with JSON-compatible syntax
+          const jsonFriendly = item.report
+            .replace(/'/g, '"')         // Replace single quotes with double quotes
+            .replace(/None/g, 'null')   // Replace Python None
+            .replace(/True/g, 'true')   // Replace Python True
+            .replace(/False/g, 'false'); // Replace Python False
+          
+          parsedReport = JSON.parse(jsonFriendly);
+        } catch (e) {
+          console.warn("Failed to parse report for ID:", item.id);
+          parsedReport = { consultant_opinion: ["Error parsing historical data"] };
+        }
+      }
+      
+      return { ...item, report: parsedReport };
+    });
+
+    set({ history: formattedHistory, error: null });
   } catch (err) {
-    set({ history: [] });
+    console.error("History Sync Error:", err);
+    set({ history: [], error: 'Could not sync with database.' });
   }
 },
   analyzeIdea: async (title: string, description: string) => {
