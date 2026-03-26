@@ -41,31 +41,86 @@ app.add_middleware(
 async def root():
     return {"status": "online", "mode": "Strategic Consultant Agentic RAG"}
 
+from fastapi.responses import StreamingResponse
+from app.services.rag_service import get_ruthless_evaluation_stream
+from app.services.cache_service import semantic_cache
+import json
+
 @app.post("/analyze-idea")
 async def analyze_idea(idea: StartupIdea, db: Session = Depends(get_db)):
     """
-    Triggers the research agent and saves the analysis to PostgreSQL.
+    Triggers the research agent and returns a stream.
+    Saves the analysis to PostgreSQL.
     """
     try:
-        # Perform Live Market Research + Gemini Analysis
-        report_data = get_ruthless_evaluation(idea.title, idea.description)
-        
-        # Save to Neon DB
+        # 1. Semantic Cache Check
+        cached_report = semantic_cache.check_cache(idea.title, idea.description)
+        if cached_report:
+            # If hit, we need to fake a stream or return standard JSON. 
+            # Since the frontend stream reader will just read all chunks, 
+            # we can yield the whole cached string as one chunk.
+            
+            # Find the ID of the cached report by creating a new evaluation record 
+            # (or we could just not create a new one, but user requested saving it)
+            db_evaluation = models.IdeaEvaluation(
+                title=idea.title,
+                description=idea.description,
+                report=cached_report
+            )
+            db.add(db_evaluation)
+            db.commit()
+            db.refresh(db_evaluation)
+            
+            async def fake_stream():
+                # The frontend expects to parse the string, so we yield it as is.
+                # If cached_report is already a string of JSON, yield it.
+                yield cached_report
+                
+            return StreamingResponse(
+                fake_stream(), 
+                media_type="text/plain", 
+                headers={"X-Evaluation-Id": str(db_evaluation.id)}
+            )
+
+        # 2. Setup new DB Evaluation to get ID
         db_evaluation = models.IdeaEvaluation(
             title=idea.title,
             description=idea.description,
-            report=str(report_data) # Saving as string for easy storage
+            report="" # Will be updated after stream
         )
-        
         db.add(db_evaluation)
         db.commit()
         db.refresh(db_evaluation)
-        
-        # Return BOTH the ID and the Analysis so the frontend can handle resets
-        return {
-            "id": db_evaluation.id,
-            "analysis": report_data
-        }
+
+        # 3. Stream and Save
+        async def stream_and_save():
+            full_text = ""
+            async for chunk in get_ruthless_evaluation_stream(idea.title, idea.description):
+                full_text += chunk
+                yield chunk
+            
+            # Post-stream update
+            # We must get a new DB session since the original scoped one might be closed 
+            # after the route returns.
+            from app.db.database import SessionLocal
+            post_db = SessionLocal()
+            try:
+                db_eval = post_db.query(models.IdeaEvaluation).filter(models.IdeaEvaluation.id == db_evaluation.id).first()
+                if db_eval:
+                    db_eval.report = full_text
+                    post_db.commit()
+                # Update Cache
+                semantic_cache.add_to_cache(db_evaluation.id, idea.title, idea.description)
+            except Exception as e:
+                print(f"Error saving stream to DB: {e}")
+            finally:
+                post_db.close()
+
+        return StreamingResponse(
+            stream_and_save(), 
+            media_type="text/plain",
+            headers={"X-Evaluation-Id": str(db_evaluation.id)}
+        )
 
     except Exception as e:
         print(f"Deployment Error Log: {str(e)}")

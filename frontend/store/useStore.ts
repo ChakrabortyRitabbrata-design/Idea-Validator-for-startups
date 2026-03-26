@@ -95,7 +95,8 @@ export const useStore = create<AppState>((set, get) => ({
   }
 },
   analyzeIdea: async (title: string, description: string) => {
-    set({ isLoading: true, error: null, currentReport: null, currentId: null });
+    // 1. Optimistic Update (Immediate Feedback, reduces perceived TTFT)
+    set({ isLoading: true, error: null, currentReport: "Researcher is working...", currentId: null });
     
     try {
       const res = await fetch(`${API_BASE_URL}/analyze-idea`, {
@@ -111,15 +112,33 @@ export const useStore = create<AppState>((set, get) => ({
         throw new Error(errData.detail || 'Failed to analyze idea');
       }
 
-      const data = await res.json();
+      // Check for Evaluation ID in headers
+      const evalId = res.headers.get('X-Evaluation-Id');
+      if (evalId) {
+        set({ currentId: parseInt(evalId, 10) });
+      }
+
+      // Read from stream
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder('utf-8');
       
-      // We now capture 'id' from the backend response
-      set({ 
-        currentReport: data.analysis || data.report, 
-        currentId: data.id, 
-        isLoading: false 
-      });
-      
+      if (!reader) throw new Error("No response body available for streaming");
+
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        accumulated += chunk;
+        
+        // Append chunks to currentReport in real-time
+        set({ currentReport: accumulated });
+      }
+
+      set({ isLoading: false });
+      get().setCurrentReport(accumulated, evalId ? parseInt(evalId, 10) : undefined);
       get().fetchHistory();
       
     } catch (err: any) {

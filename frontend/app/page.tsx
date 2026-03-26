@@ -145,7 +145,7 @@ export default function IdeaValidatorPage() {
           </form>
 
           {/* Skeleton Loader */}
-          {isLoading && (
+          {isLoading && !currentReport && (
             <div className="mt-8 rounded-xl border border-[#222] bg-[#111] p-8 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#222] to-transparent w-[200%] animate-[shimmer_2s_infinite] -translate-x-full" />
               <div className="flex items-center gap-3 mb-6">
@@ -162,7 +162,7 @@ export default function IdeaValidatorPage() {
           )}
 
           {/* Report Card */}
-          {!isLoading && currentReport && (
+          {currentReport && (
             <ReportDisplay currentReport={currentReport} />
           )}
         </div>
