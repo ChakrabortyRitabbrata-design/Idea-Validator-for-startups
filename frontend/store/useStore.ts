@@ -32,14 +32,30 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 const parsePythonString = (str: string) => {
   try {
-    const jsonFriendly = str
-      .replace(/(?<![a-zA-Z])'|'(?![a-zA-Z])/g, '"') // Replace single quotes (ignoring apostrophes)
-      .replace(/\bNone\b/g, 'null')                 // Replace Python None
-      .replace(/\bTrue\b/g, 'true')                 // Replace Python True
-      .replace(/\bFalse\b/g, 'false');              // Replace Python False
-    return JSON.parse(jsonFriendly);
+    // 1. Replace Python language-specific features
+    let jsonFriendly = str
+      .replace(/\bNone\b/g, 'null')
+      .replace(/\bTrue\b/g, 'true')
+      .replace(/\bFalse\b/g, 'false');
+
+    try {
+      // 2. Perform character replacements to fix quotes for JSON.parse
+      let modifiedStr = jsonFriendly
+        // Escape existing unescaped double quotes first to avoid JS throwing SyntaxError later
+        .replace(/(?<!\\)"/g, '\\"')
+        // Convert single quotes holding keys/values to double quotes
+        // We use negative lookarounds so apostrophes (e.g. "It's") are NOT replaced
+        .replace(/(?<![a-zA-Z])'|'(?![a-zA-Z])/g, '"');
+
+      return JSON.parse(modifiedStr);
+    } catch (parseError) {
+      // 3. Fallback: For highly nested, convoluted quotes, 
+      // evaluate the safely scrubbed python string as a JavaScript object literal 
+      // which gracefully bypasses standard JSON quote restrictions.
+      return new Function('return ' + jsonFriendly)();
+    }
   } catch (e) {
-    console.warn("Failed to parse report for text snippet.");
+    console.warn("Failed to parse report for text snippet.", e);
     return { consultant_opinion: ["Error parsing historical data"] };
   }
 };
