@@ -7,6 +7,3 @@ sqlalchemy
 psycopg2-binary
 pydantic
 faiss-cpu
-langchain-community
-langchain-huggingface
-sentence-transformers

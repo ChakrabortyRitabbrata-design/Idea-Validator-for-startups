@@ -56,7 +56,13 @@ const parsePythonString = (str: string) => {
     }
   } catch (e) {
     console.warn("Failed to parse report for text snippet.", e);
-    return { consultant_opinion: ["Error parsing historical data"] };
+    // Render fallback data structure
+    return { 
+      consultant_opinion: ["Data Recovery Incomplete: Analyzing raw stream elements..."],
+      risks: {"market": ["Unverified market parameters"], "execution": ["Stream ingestion fault"]},
+      verdict: "ANALYZING",
+      ui_instruction: null
+    };
   }
 };
 

@@ -21,7 +21,7 @@ if not DATABASE_URL:
 engine = create_engine(
     DATABASE_URL,
     poolclass=pool.NullPool,
-    connect_args={"sslmode": "require"}
+    connect_args={"sslmode": "prefer"}
 )
 
 # 5. Create a 'SessionLocal' (The factory that makes database connections for each request)

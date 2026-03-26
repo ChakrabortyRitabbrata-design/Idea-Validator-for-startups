@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from app.db.database import engine, get_db
 from app.db import models
 from app.models.idea import StartupIdea
-from app.services.rag_service import get_ruthless_evaluation
 
 # 1. Load Environment Variables
 load_dotenv()
@@ -139,3 +138,8 @@ async def get_history(db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Database Error: {e}")
         return [] # Return empty list on error to keep UI stable
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port)

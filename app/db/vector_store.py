@@ -1,21 +1,65 @@
 import os
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_community.document_loaders import TextLoader
-from langchain_text_splitters import CharacterTextSplitter
+import faiss
+import numpy as np
+from google import genai
+from dotenv import load_dotenv
 
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+load_dotenv()
+
+class LightweightVectorStore:
+    def __init__(self):
+        self.client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+        self.dimension = 768
+        self.index = faiss.IndexFlatIP(self.dimension)
+        self.index.make_direct_map()
+        self.documents = []
+        self._load()
+
+    def _get_embedding(self, text):
+        response = self.client.models.embed_content(
+            model="text-embedding-004", 
+            contents=text
+        )
+        return response.embeddings[0].values
+
+    def _load(self):
+        if not os.path.exists("data/market_data.txt"):
+            return
+            
+        with open("data/market_data.txt", "r", encoding="utf-8") as f:
+            text = f.read()
+            
+        # Lightweight manual splitting (~500 chars)
+        chunks = [text[i:i+500] for i in range(0, len(text), 450)]
+        self.documents = chunks
+        
+        for chunk in chunks:
+            vector = self._get_embedding(chunk)
+            vector_np = np.array([vector]).astype('float32')
+            faiss.normalize_L2(vector_np)
+            self.index.add(vector_np)
+
+    def similarity_search(self, query, k=3):
+        if self.index.ntotal == 0:
+            return []
+            
+        vector = self._get_embedding(query)
+        vector_np = np.array([vector]).astype('float32')
+        faiss.normalize_L2(vector_np)
+        
+        scores, indices = self.index.search(vector_np, k)
+        
+        class DummyDoc:
+            def __init__(self, content):
+                self.page_content = content
+                
+        results = [DummyDoc(self.documents[idx]) for idx in indices[0] if idx != -1]
+        return results
+
+_store_instance = None
 
 def get_vector_store():
-    # If the library exists, load it. If not, make it.
-    if os.path.exists("faiss_index"):
-        return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-    
-    loader = TextLoader("data/market_data.txt")
-    documents = loader.load()
-    text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    docs = text_splitter.split_documents(documents)
-    
-    vectorstore = FAISS.from_documents(docs, embeddings)
-    vectorstore.save_local("faiss_index")
-    return vectorstore
+    global _store_instance
+    if _store_instance is None:
+        _store_instance = LightweightVectorStore()
+    return _store_instance
