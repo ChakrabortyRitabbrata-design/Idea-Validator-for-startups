@@ -30,25 +30,38 @@ interface AppState {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-const parseReportString = (str: string) => {
-  try {
-    let cleaned = str.trim();
-    if (cleaned.startsWith('```')) {
-      cleaned = cleaned.replace(/^```(json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-    }
-    return JSON.parse(cleaned);
-  } catch (e) {
-    console.warn("Failed to parse report string as JSON.", e);
-    try {
-      const start = str.indexOf('{');
-      const end = str.lastIndexOf('}');
-      if (start !== -1 && end !== -1) {
-         return JSON.parse(str.substring(start, end + 1));
-      }
-    } catch (err) {}
-    
-    return str; // Fallback to raw string
+const normalizeProtocolData = (data: any): StructuredAnalysis => {
+  if (typeof data === 'object' && data !== null) {
+    return data;
   }
+  
+  if (typeof data === 'string') {
+    try {
+      // 1. Strip markdown
+      let cleaned = data.trim();
+      if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```(json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+      }
+      return JSON.parse(cleaned);
+    } catch (e1) {
+      // 2. Legacy Python string fallback
+      try {
+        let jsonFriendly = data
+          .replace(/\bNone\b/g, 'null')
+          .replace(/\bTrue\b/g, 'true')
+          .replace(/\bFalse\b/g, 'false');
+        
+        // Attempt using Function constructor as safe evaluator since it's just client-side representation logic
+        const evaluated = new Function('return ' + jsonFriendly)();
+        if (typeof evaluated === 'object' && evaluated !== null) {
+          return evaluated;
+        }
+      } catch (e2) {
+        console.warn("Failed to normalize protocol data.", e2);
+      }
+    }
+  }
+  return data;
 };
 
 export const useStore = create<AppState>((set, get) => ({
@@ -68,14 +81,9 @@ export const useStore = create<AppState>((set, get) => ({
     // 1. Ensure we have an array
     const rawHistory = Array.isArray(data) ? data : (data.data || []);
 
-    // 2. The "Hydration" Logic: Parse JSON Strings
+    // 2. The "Hydration" Logic: Parse and Normalize Legacy Strings
     const formattedHistory = rawHistory.map((item: any) => {
-      let parsedReport = item.report;
-      
-      if (typeof item.report === 'string') {
-        parsedReport = parseReportString(item.report);
-      }
-      
+      const parsedReport = normalizeProtocolData(item.report);
       return { ...item, report: parsedReport };
     });
 
@@ -138,10 +146,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   setCurrentReport: (report: StructuredAnalysis | string, id?: number) => {
-    let parsed = report;
-    if (typeof report === 'string') {
-      parsed = parseReportString(report);
-    }
-    set({ currentReport: parsed as StructuredAnalysis, currentId: id || null });
+    const parsed = normalizeProtocolData(report);
+    set({ currentReport: parsed, currentId: id || null });
   }
 }));
