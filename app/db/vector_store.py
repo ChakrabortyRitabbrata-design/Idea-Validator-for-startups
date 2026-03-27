@@ -11,7 +11,6 @@ class LightweightVectorStore:
         self.client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
         self.dimension = 768
         self.index = faiss.IndexFlatIP(self.dimension)
-        self.index.make_direct_map()
         self.documents = []
         self._load()
 

@@ -11,7 +11,6 @@ import {
   Sparkles,
   RotateCcw
 } from 'lucide-react';
-import AIComponentRenderer from './AIComponentRenderer';
 
 interface ReportDisplayProps {
   currentReport: any;
@@ -121,10 +120,7 @@ export default function ReportDisplay({ currentReport }: ReportDisplayProps) {
         </motion.div>
       )}
 
-      {/* Dynamic AI UI Component Injection */}
-      {currentReport?.ui_instruction && (
-         <AIComponentRenderer uiInstruction={currentReport.ui_instruction} />
-      )}
+
 
       {/* Risk Profile Grid */}
       {currentReport.risks && typeof currentReport.risks === 'object' && Object.keys(currentReport.risks).length > 0 && (

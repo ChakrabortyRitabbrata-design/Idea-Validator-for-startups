@@ -30,39 +30,24 @@ interface AppState {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-const parsePythonString = (str: string) => {
+const parseReportString = (str: string) => {
   try {
-    // 1. Replace Python language-specific features
-    let jsonFriendly = str
-      .replace(/\bNone\b/g, 'null')
-      .replace(/\bTrue\b/g, 'true')
-      .replace(/\bFalse\b/g, 'false');
-
-    try {
-      // 2. Perform character replacements to fix quotes for JSON.parse
-      let modifiedStr = jsonFriendly
-        // Escape existing unescaped double quotes first to avoid JS throwing SyntaxError later
-        .replace(/(?<!\\)"/g, '\\"')
-        // Convert single quotes holding keys/values to double quotes
-        // We use negative lookarounds so apostrophes (e.g. "It's") are NOT replaced
-        .replace(/(?<![a-zA-Z])'|'(?![a-zA-Z])/g, '"');
-
-      return JSON.parse(modifiedStr);
-    } catch (parseError) {
-      // 3. Fallback: For highly nested, convoluted quotes, 
-      // evaluate the safely scrubbed python string as a JavaScript object literal 
-      // which gracefully bypasses standard JSON quote restrictions.
-      return new Function('return ' + jsonFriendly)();
+    let cleaned = str.trim();
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```(json)?\n?/i, '').replace(/\n?```$/i, '').trim();
     }
+    return JSON.parse(cleaned);
   } catch (e) {
-    console.warn("Failed to parse report for text snippet.", e);
-    // Render fallback data structure
-    return { 
-      consultant_opinion: ["Data Recovery Incomplete: Analyzing raw stream elements..."],
-      risks: {"market": ["Unverified market parameters"], "execution": ["Stream ingestion fault"]},
-      verdict: "ANALYZING",
-      ui_instruction: null
-    };
+    console.warn("Failed to parse report string as JSON.", e);
+    try {
+      const start = str.indexOf('{');
+      const end = str.lastIndexOf('}');
+      if (start !== -1 && end !== -1) {
+         return JSON.parse(str.substring(start, end + 1));
+      }
+    } catch (err) {}
+    
+    return str; // Fallback to raw string
   }
 };
 
@@ -83,12 +68,12 @@ export const useStore = create<AppState>((set, get) => ({
     // 1. Ensure we have an array
     const rawHistory = Array.isArray(data) ? data : (data.data || []);
 
-    // 2. The "Hydration" Logic: Convert Python Strings to JS Objects
+    // 2. The "Hydration" Logic: Parse JSON Strings
     const formattedHistory = rawHistory.map((item: any) => {
       let parsedReport = item.report;
       
       if (typeof item.report === 'string') {
-        parsedReport = parsePythonString(item.report);
+        parsedReport = parseReportString(item.report);
       }
       
       return { ...item, report: parsedReport };
@@ -124,27 +109,12 @@ export const useStore = create<AppState>((set, get) => ({
         set({ currentId: parseInt(evalId, 10) });
       }
 
-      // Read from stream
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder('utf-8');
-      
-      if (!reader) throw new Error("No response body available for streaming");
-
-      let accumulated = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        accumulated += chunk;
-        
-        // Append chunks to currentReport in real-time
-        set({ currentReport: accumulated });
-      }
+      // Expecting standard JSON response
+      const data = await res.json();
 
       set({ isLoading: false });
-      get().setCurrentReport(accumulated, evalId ? parseInt(evalId, 10) : undefined);
+      const finalId = data.id || (evalId ? parseInt(evalId, 10) : undefined);
+      get().setCurrentReport(data.report, finalId);
       get().fetchHistory();
       
     } catch (err: any) {
@@ -170,7 +140,7 @@ export const useStore = create<AppState>((set, get) => ({
   setCurrentReport: (report: StructuredAnalysis | string, id?: number) => {
     let parsed = report;
     if (typeof report === 'string') {
-      parsed = parsePythonString(report);
+      parsed = parseReportString(report);
     }
     set({ currentReport: parsed as StructuredAnalysis, currentId: id || null });
   }

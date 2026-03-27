@@ -15,7 +15,6 @@ class SemanticCache:
         self.dimension = 768 # text-embedding-004 default dimension
         # Use Inner Product (Cosine similarity when vectors are normalized)
         self.index = faiss.IndexFlatIP(self.dimension)
-        self.index.make_direct_map() # Memory optimized loading as suggested
         self.db_ids = []
         
         self._load_recent()
